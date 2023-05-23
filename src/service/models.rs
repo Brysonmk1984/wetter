@@ -2,10 +2,11 @@ use serde::Deserialize;
 use strum_macros::{Display, EnumString};
 
 #[derive(Display, EnumString)]
+#[strum(ascii_case_insensitive)]
 pub enum RequestType {
-    #[strum(ascii_case_insensitive, serialize = "current")]
+    #[strum(serialize = "current")]
     Current,
-    #[strum(ascii_case_insensitive, serialize = "forecast")]
+    #[strum(serialize = "forecast")]
     Forecast,
 }
 
@@ -13,5 +14,5 @@ pub enum RequestType {
 pub struct WeatherDescription {
     icon: String,
     code: i16,
-    description: String,
+    pub description: String,
 }

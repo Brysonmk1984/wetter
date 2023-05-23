@@ -5,7 +5,6 @@ use crate::{
 
 use super::request::{verify_response, WeatherRequest};
 use async_trait::async_trait;
-use reqwest::Request;
 use serde::Deserialize;
 
 pub struct CurrentWeatherRequest {}
@@ -18,15 +17,15 @@ impl CurrentWeatherRequest {
 
 #[async_trait]
 impl WeatherRequest for CurrentWeatherRequest {
-    async fn get(&self) -> Result<String, AcceptableError> {
-        let url = self.build_url(RequestType::Current);
-        println!("{}", url);
+    async fn get(&self, _: Option<u8>) -> Result<String, AcceptableError> {
+        let url = self.build_url(RequestType::Current, None);
+
         let body = reqwest::get(url).await?;
         let status = &body.status().as_u16();
 
         verify_response(status)?;
 
-        let CurrentWeatherResponse { count, data } = body.json::<CurrentWeatherResponse>().await?;
+        let CurrentWeatherResponse { data, .. } = body.json::<CurrentWeatherResponse>().await?;
         let CurrentWeather {
             temp,
             app_temp,
@@ -39,14 +38,14 @@ impl WeatherRequest for CurrentWeatherRequest {
         } = &data[0];
 
         let result = format!(
-            "TEMP: {}\nFEELS LIKE: {}\nPRECIP: {}\nWIND: {}\nGUST: {} {}\nLOCATION: {}",
+            "LOCATION: {}\n\nTEMP: {:.0}\nFEELS LIKE: {:.0}\nPRECIP: {}\nWIND: {} {}\nGUST: {}\n",
+            city_name,
             temp,
             app_temp,
             precip.unwrap_or(0.0),
             wind_spd,
-            gust,
             wind_cdir,
-            city_name
+            gust,
         );
 
         Ok(result)

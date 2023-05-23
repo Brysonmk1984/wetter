@@ -41,16 +41,18 @@ async fn handle_inputs(mut args: Vec<String>) -> Result<(), AcceptableError> {
     let request_type = args[0].as_str();
     let request_type_as_enum = RequestType::from_str(request_type);
 
+    let days = determine_second_arg(args.get(1));
+
     match request_type_as_enum {
         Ok(RequestType::Current) => {
             let request = CurrentWeatherRequest::new();
-            let current_weather = request.get().await?;
+            let current_weather = request.get(None).await?;
 
             println!("{}", current_weather);
         }
         Ok(RequestType::Forecast) => {
             let request = ForecastWeatherRequest::new();
-            let forecast_weather = request.get().await?;
+            let forecast_weather = request.get(Some(days.unwrap_or(5))).await?;
 
             println!("{}", forecast_weather);
         }
@@ -60,4 +62,19 @@ async fn handle_inputs(mut args: Vec<String>) -> Result<(), AcceptableError> {
     }
 
     Ok(())
+}
+
+fn determine_second_arg(second_arg: Option<&String>) -> Option<u8> {
+    match second_arg {
+        Some(value) => {
+            let val = value.parse::<u8>();
+            if let Ok(days) = val {
+                Some(days)
+            } else {
+                println!("Sorry pal, didn't recognize that second argument there.\n");
+                None
+            }
+        }
+        None => None,
+    }
 }

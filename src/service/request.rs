@@ -30,7 +30,7 @@ impl APICredentials {
 
 #[async_trait]
 pub trait WeatherRequest {
-    async fn get(&self) -> Result<String, AcceptableError>;
+    async fn get(&self, days: Option<u8>) -> Result<String, AcceptableError>;
 
     fn read_settings() {
         let settings = read_settings();
@@ -38,7 +38,7 @@ pub trait WeatherRequest {
         println!("{:?}", settings);
     }
 
-    fn build_url(&self, request_variant: RequestType) -> String {
+    fn build_url(&self, request_variant: RequestType, days: Option<u8>) -> String {
         let api_credentials = APICredentials::new();
         let (domain, key) = api_credentials.get();
 
@@ -50,12 +50,16 @@ pub trait WeatherRequest {
         } = user_settings;
 
         let request_variant_url_part = match request_variant {
-            RequestType::Current => request_variant.to_string(),
-            RequestType::Forecast => format!("{}/daily", request_variant.to_string()),
+            RequestType::Current => format!("{}?", request_variant.to_string()),
+            RequestType::Forecast => format!(
+                "{}/daily?days={}&",
+                request_variant.to_string(),
+                days.unwrap_or(5)
+            ),
         };
 
         let url = format!(
-            "{}{}?key={}&city={}&state={}&country={}&units=I",
+            "{}{}key={}&city={}&state={}&country={}&units=I",
             domain, request_variant_url_part, key, city, state, country_code
         );
 

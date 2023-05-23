@@ -1,12 +1,10 @@
-use async_trait::async_trait;
-use serde::Deserialize;
-
-use crate::error::AcceptableError;
-
 use super::{
     models::{RequestType, WeatherDescription},
     request::{verify_response, WeatherRequest},
 };
+use crate::error::AcceptableError;
+use async_trait::async_trait;
+use serde::Deserialize;
 
 pub struct ForecastWeatherRequest {}
 
@@ -14,52 +12,82 @@ impl ForecastWeatherRequest {
     pub fn new() -> Self {
         Self {}
     }
+
+    fn right_pad(string: String, length: Option<i8>, filler: Option<char>) -> String {
+        let mut i: i8 = -1;
+        let filler_value = filler.unwrap_or(' ');
+        let length_value = length.unwrap_or(23) - string.len() as i8;
+
+        let mut padded_string = string.to_string();
+
+        while i < length_value {
+            padded_string = format!("{}{}", padded_string.to_string(), filler_value);
+            i += 1;
+        }
+        padded_string
+    }
+
+    fn format_into_rows(data: &Vec<ForecastWeather>, city: String) -> String {
+        let day = data
+            .iter()
+            .map(|day| ForecastWeatherRequest::right_pad(format!("{}", day.datetime), None, None))
+            .collect::<Vec<String>>()
+            .join("");
+        let lows = data
+            .iter()
+            .map(|day| {
+                ForecastWeatherRequest::right_pad(format!("LOW: {:.0}", day.low_temp), None, None)
+            })
+            .collect::<Vec<String>>()
+            .join("");
+        let highs = data
+            .iter()
+            .map(|day| {
+                ForecastWeatherRequest::right_pad(format!("HIGH: {:.0}", day.high_temp), None, None)
+            })
+            .collect::<Vec<String>>()
+            .join("");
+        let forecast = data
+            .iter()
+            .map(|day| {
+                ForecastWeatherRequest::right_pad(
+                    format!("{}", day.weather.description),
+                    None,
+                    None,
+                )
+            })
+            .collect::<Vec<String>>()
+            .join("");
+
+        format!(
+            "LOCATION:{}\n\n{}\n\n{}\n{}\n{}\n",
+            city, day, highs, lows, forecast
+        )
+    }
 }
 
 #[async_trait]
 impl WeatherRequest for ForecastWeatherRequest {
-    async fn get(&self) -> Result<String, AcceptableError> {
-        let url = self.build_url(RequestType::Forecast);
-        // "https://api.weatherbit.io/v2.0/current?key=ea74dca6df3c42c590a077ff2568048c&city=laramie,Wyoming&units=I";
-
+    async fn get(&self, days: Option<u8>) -> Result<String, AcceptableError> {
+        let url = self.build_url(RequestType::Forecast, days);
         let body = reqwest::get(url).await?;
         let status = &body.status().as_u16();
 
         verify_response(status)?;
 
-        //let val = body.text().await?;
-        //println!("{}", val);
+        let ForecastWeatherResponse { data, city_name } =
+            body.json::<ForecastWeatherResponse>().await?;
 
-        let ForecastWeatherResponse { data } = body.json::<ForecastWeatherResponse>().await?;
-        // let ForecastWeather {
-        //     temp,
-        //     app_temp,
-        //     precip,
-        //     wind_spd,
-        //     wind_cdir,
-        //     gust,
-        //     city_name,
-        //     ..
-        // } = &data[0];
+        let rows = ForecastWeatherRequest::format_into_rows(&data, city_name);
 
-        // let result = format!(
-        //     "TEMP: {}\nFEELS LIKE: {}\nPRECIP: {}\nWIND: {}\nGUST: {} {}\nLOCATION: {}",
-        //     temp,
-        //     app_temp,
-        //     precip.unwrap_or(0.0),
-        //     wind_spd,
-        //     gust,
-        //     wind_cdir,
-        //     city_name
-        // );
-
-        Ok(String::from("asd"))
+        Ok(rows)
     }
 }
 
 #[derive(Debug, Deserialize)]
 struct ForecastWeatherResponse {
     data: Vec<ForecastWeather>,
+    city_name: String,
 }
 
 #[derive(Debug, Deserialize)]

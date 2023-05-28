@@ -3,7 +3,7 @@ use std::env;
 use async_trait::async_trait;
 
 use crate::{
-    error::AcceptableError,
+    error::CombinedError,
     settings::{read_settings, UserSettings},
 };
 
@@ -30,7 +30,7 @@ impl APICredentials {
 
 #[async_trait]
 pub trait WeatherRequest {
-    async fn get(&self, days: Option<u8>) -> Result<String, AcceptableError>;
+    async fn get(&self, days: Option<u8>) -> Result<String, CombinedError>;
 
     fn read_settings() {
         let settings = read_settings();
@@ -67,11 +67,11 @@ pub trait WeatherRequest {
     }
 }
 
-pub fn verify_response(status: &u16) -> Result<(), AcceptableError> {
+pub fn verify_response(status: &u16) -> Result<(), CombinedError> {
     if (400..499).contains(status) {
-        Err(AcceptableError::ClientRequestError(*status))
+        Err(CombinedError::ClientRequestError(*status))
     } else if *status == 500 {
-        Err(AcceptableError::ServerResponseError(*status))
+        Err(CombinedError::ServerResponseError(*status))
     } else {
         Ok(())
     }

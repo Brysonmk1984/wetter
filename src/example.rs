@@ -1,4 +1,4 @@
-use error::AcceptableError;
+use error::CombinedError;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::{error::Error, process};
@@ -42,7 +42,7 @@ struct Info {
     prev: Option<u16>,
 }
 
-async fn make_request() -> Result<Vec<RickAndMortyResult>, AcceptableError> {
+async fn make_request() -> Result<Vec<RickAndMortyResult>, CombinedError> {
     let body: DeserializedResponse = reqwest::get("https://rickandmortyapi.com/api/character")
         .await?
         .json()

@@ -2,7 +2,7 @@ use super::{
     models::{RequestType, WeatherDescription},
     request::{verify_response, WeatherRequest},
 };
-use crate::error::AcceptableError;
+use crate::error::CombinedError;
 use async_trait::async_trait;
 use serde::Deserialize;
 
@@ -68,7 +68,7 @@ impl ForecastWeatherRequest {
 
 #[async_trait]
 impl WeatherRequest for ForecastWeatherRequest {
-    async fn get(&self, days: Option<u8>) -> Result<String, AcceptableError> {
+    async fn get(&self, days: Option<u8>) -> Result<String, CombinedError> {
         let url = self.build_url(RequestType::Forecast, days);
         let body = reqwest::get(url).await?;
         let status = &body.status().as_u16();

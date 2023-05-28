@@ -1,5 +1,5 @@
 use crate::{
-    error::AcceptableError,
+    error::CombinedError,
     service::models::{RequestType, WeatherDescription},
 };
 
@@ -17,7 +17,7 @@ impl CurrentWeatherRequest {
 
 #[async_trait]
 impl WeatherRequest for CurrentWeatherRequest {
-    async fn get(&self, _: Option<u8>) -> Result<String, AcceptableError> {
+    async fn get(&self, _: Option<u8>) -> Result<String, CombinedError> {
         let url = self.build_url(RequestType::Current, None);
 
         let body = reqwest::get(url).await?;

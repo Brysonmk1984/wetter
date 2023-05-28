@@ -1,6 +1,11 @@
 use serde::Deserialize;
 use strum_macros::{Display, EnumString};
 
+pub enum ArgType {
+    OptionalDays(Option<u8>),
+    RequestType(RequestType),
+}
+
 #[derive(Display, EnumString)]
 #[strum(ascii_case_insensitive)]
 pub enum RequestType {
